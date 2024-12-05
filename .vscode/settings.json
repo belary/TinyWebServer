@@ -1,0 +1,32 @@
+{
+    "vim.handleKeys": {
+        "<C-p>": false,
+        "<C-t>": false,
+        "<C-o>": false,
+        "<C-b>": false,
+        "<C-f>": false,
+        "<C-d>": false,
+        "<C-u>": false,
+        "<C-e>": false,
+        "<C-y>": false,
+        "<C-w>": false
+    },
+    "vim.useCtrlKeys": false,
+    "vim.normalModeKeyBindingsNonRecursive": [
+        {
+            "before": ["<C-p>"],
+            "commands": ["workbench.action.quickOpen"]
+        },
+        {
+            "before": ["<C-t>"],
+            "commands": ["workbench.action.showAllSymbols"]
+        }
+    ],
+    "editor.inlineSuggest.syntaxHighlightingEnabled": true,
+    "workbench.colorCustomizations": {
+        "scrollbarSlider.background": "#4e4e4e99",
+        "scrollbarSlider.hoverBackground": "#91878799",
+        "scrollbarSlider.activeBackground": "#666666",
+        "scrollbar.shadow": "#000000"
+    }
+}

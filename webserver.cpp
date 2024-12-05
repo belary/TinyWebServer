@@ -103,9 +103,11 @@ void WebServer::thread_pool()
 void WebServer::eventListen()
 {
     //网络编程基础步骤
+    // 1. 建立监听的socket
     m_listenfd = socket(PF_INET, SOCK_STREAM, 0);
     assert(m_listenfd >= 0);
 
+    // 2. 设置选项
     //优雅关闭连接
     if (0 == m_OPT_LINGER)
     {
@@ -118,6 +120,7 @@ void WebServer::eventListen()
         setsockopt(m_listenfd, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
     }
 
+    // 3. 绑定IP和端口 
     int ret = 0;
     struct sockaddr_in address;
     bzero(&address, sizeof(address));
@@ -125,6 +128,7 @@ void WebServer::eventListen()
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_port = htons(m_port);
 
+    // 4. socket绑定
     int flag = 1;
     setsockopt(m_listenfd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
     ret = bind(m_listenfd, (struct sockaddr *)&address, sizeof(address));

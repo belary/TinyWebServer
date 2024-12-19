@@ -104,10 +104,13 @@ void sort_timer_lst::tick()
     util_timer *tmp = head;
     while (tmp)
     {
+        // 若未超时则跳出当前的tick
         if (cur < tmp->expire)
         {
             break;
         }
+
+        // 超时处理
         tmp->cb_func(tmp->user_data);
         head = tmp->next;
         if (head)
@@ -165,6 +168,8 @@ void Utils::addfd(int epollfd, int fd, bool one_shot, int TRIGMode)
     epoll_event event;
     event.data.fd = fd;
 
+    // EPOLLIN 关注数据的可读性，适用于接收数据
+    // EPOOLRDHUP (Read Hang Up) 关注于连接状态，检测远端的关闭操作（TCP发送FIN包）
     if (1 == TRIGMode)
         event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
     else

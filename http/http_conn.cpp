@@ -499,9 +499,12 @@ http_conn::HTTP_CODE http_conn::do_request()
     else
         strncpy(m_real_file + len, m_url, FILENAME_LEN - len - 1);
 
+    // stat函数是Linux系统中的一个系统调用，用于获取文件或文件系统的状态信息。它可以获取文件的各种属性，
+    // 例如文件类型、文件大小、文件权限、文件所有者等。
     if (stat(m_real_file, &m_file_stat) < 0)
         return NO_RESOURCE;
 
+    //检查文件权限 是否readable
     if (!(m_file_stat.st_mode & S_IROTH))
         return FORBIDDEN_REQUEST;
 
@@ -509,6 +512,8 @@ http_conn::HTTP_CODE http_conn::do_request()
         return BAD_REQUEST;
 
     int fd = open(m_real_file, O_RDONLY);
+    // mmap函数的作用是将文件或设备的内容映射到进程的虚拟地址空间中，使得进程可以直接访问文件或设备的内容，
+    // 而不需要通过读写系统调用来复制数据。这种机制可以提高程序的效率和性能。
     m_file_address = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     close(fd);
     return FILE_REQUEST;

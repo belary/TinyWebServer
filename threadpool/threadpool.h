@@ -8,6 +8,17 @@
 #include "../lock/locker.h"
 #include "../CGImysql/sql_connection_pool.h"
 
+/*
+信号量在 threadpool 中的作用：
+
+    任务通知：
+        当主线程添加任务到队列时，通过 post() 增加信号量，唤醒阻塞的工作线程。
+    线程阻塞与唤醒：
+        工作线程通过 wait() 方法阻塞自己，直到信号量的值大于 0。
+        信号量值减少时，表示任务正在被某个线程处理。
+    线程间任务分配：
+        信号量值确保只有有任务时才会唤醒线程，从而避免空转。
+*/
 template <typename T>
 class threadpool
 {
@@ -29,7 +40,11 @@ private:
     pthread_t *m_threads;       //描述线程池的数组，其大小为m_thread_number
     std::list<T *> m_workqueue; //请求队列
     locker m_queuelocker;       //保护请求队列的互斥锁
+
+    // 信号量（sem 类）用于协调任务队列与工作线程之间的工作。通过信号量，线程池可以高效地控制工作线程的执行状态，实现生产者-消费者模型。
     sem m_queuestat;            //是否有任务需要处理
+
+
     connection_pool *m_connPool;  //数据库
     int m_actor_model;          //模型切换
 };
@@ -43,6 +58,12 @@ threadpool<T>::threadpool( int actor_model, connection_pool *connPool, int threa
         throw std::exception();
     for (int i = 0; i < thread_number; ++i)
     {
+        /*
+            最后一个参数 this 指针是线程启动函数 worker 的参数。
+            this 传递了当前线程池对象的地址。
+            worker 函数中通过 arg 转换为线程池对象的指针 threadpool *，从而调用其成员函数 run()。
+        */ 
+        /
         if (pthread_create(m_threads + i, NULL, worker, this) != 0)
         {
             delete[] m_threads;
@@ -86,6 +107,8 @@ bool threadpool<T>::append_p(T *request)
     }
     m_workqueue.push_back(request);
     m_queuelocker.unlock();
+    // 每次任务提交后，信号量值加 1。
+    // 等待任务的线程会通过信号量的值判断是否可以处理新任务。
     m_queuestat.post();
     return true;
 }
@@ -101,20 +124,23 @@ void threadpool<T>::run()
 {
     while (true)
     {
-        m_queuestat.wait();
-        m_queuelocker.lock();
+        m_queuestat.wait(); // 等待信号量，有任务时继续:如果信号量的值为 0，线程会阻塞在这里，直到有任务被添加并调用 post()
+        m_queuelocker.lock(); // 加锁保护任务队列: 确保对任务队列的访问是线程安全的。
         if (m_workqueue.empty())
         {
             m_queuelocker.unlock();
             continue;
         }
-        T *request = m_workqueue.front();
-        m_workqueue.pop_front();
-        m_queuelocker.unlock();
+        T *request = m_workqueue.front(); // 获取队列中的任务
+        m_workqueue.pop_front(); // 移除已获取的任务
+        m_queuelocker.unlock();  // 解锁任务队列
         if (!request)
             continue;
+
+        // 从任务队列中取出任务后，线程独立执行任务的处理逻辑: 根据模式选择任务处理逻辑
         if (1 == m_actor_model)
         {
+            // 判断是读写操作
             if (0 == request->m_state)
             {
                 if (request->read_once())

@@ -28,5 +28,14 @@
         "scrollbarSlider.hoverBackground": "#91878799",
         "scrollbarSlider.activeBackground": "#666666",
         "scrollbar.shadow": "#000000"
+    },
+    "files.associations": {
+        "fstream": "cpp",
+        "*.tcc": "cpp",
+        "unordered_map": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp",
+        "exception": "cpp"
     }
 }
